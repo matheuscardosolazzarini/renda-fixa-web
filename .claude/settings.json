@@ -1,0 +1,5 @@
+{
+  "permissions": {
+    "additionalDirectories": ["../renda-fixa-api"]
+  }
+}
