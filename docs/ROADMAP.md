@@ -29,12 +29,22 @@ Vitest; proxy do `ng serve` para a API do Compose (D-15); snapshot do OpenAPI e 
 no `core` (D-06); `LOCALE_ID` pt-BR e pipes de formatação (D-07); shell de navegação com as rotas da D-09 (telas vazias);
 CI no PR.
 
-- [ ] `npm run lint`, `lint:styles`, `test` e `build` verdes no CI de um PR
-- [ ] Violar uma fronteira da D-03 de propósito quebra o lint (testar uma vez e desfazer)
-- [ ] Os tipos gerados batem com o snapshot e o CI falha se divergirem
-- [ ] O desembrulho do envelope cobre sucesso, 204 sem corpo, 400, 404, 500 e falha de rede, com testes
-- [ ] Os pipes formatam moeda, percentual e data `DateOnly` em pt-BR sem `new Date()`, com testes
-- [ ] Bundle inicial abaixo de 250 KB comprimido (RNF-01)
+- [ ] `npm run lint`, `lint:styles`, `test` e `build` verdes no CI de um PR (pendente: depende do PR da fase; os
+  mesmos comandos passam localmente, `VALIDACAO-W1.md`)
+- [x] Violar uma fronteira da D-03 de propósito quebra o lint (testar uma vez e desfazer)
+- [x] Os tipos gerados batem com o snapshot e o CI falha se divergirem
+- [x] O desembrulho do envelope cobre sucesso, 204 sem corpo, 400, 404, 500 e falha de rede, com testes
+- [x] Os pipes formatam moeda, percentual e data `DateOnly` em pt-BR sem `new Date()`, com testes
+- [x] Bundle inicial abaixo de 250 KB comprimido (RNF-01): 73 385 bytes em gzip
+
+Evidência em `VALIDACAO-W1.md` (17/11/2026). Pendências que a W1 deixa para as fases seguintes:
+
+- W3: pipe de dias (D-03) e função "hoje" no fuso de São Paulo (D-07), quando a projeção precisar; `timeout` de
+  requisição precisa virar a mensagem de conexão da D-06 (hoje um erro que não é HTTP recebe a genérica); avaliar
+  limite de cobertura por pasta quando os serviços das features entrarem na conta.
+- W5: o `rfPercent` tem duas casas fixas, e o CDI diário (`0.055131` % ao dia) sairia `0,06%`; decidir a precisão.
+- Aceitos sem correção: o `rfDateOnly` valida o formato, não o calendário (a API só manda data válida); o aviso
+  `install-scripts` do npm 11 no `npm ci` (não afeta o build; silenciar exige configurar `allowScripts`).
 
 ### W2 — Design system
 
@@ -47,7 +57,9 @@ modo claro e escuro.
 
 ### W3 — Carteira e projeção
 
-Passos: SignalStore da carteira (D-04); telas `/carteira` e `/posicoes/:id`; data de referência na URL.
+Passos: SignalStore da carteira (D-04); telas `/carteira` e `/posicoes/:id`; data de referência na URL; retry com
+espera no interceptor de rede (D-04); tratamento de rota desconhecida (os dois últimos decididos em 16/11/2026, na
+aprovação da spec da W1).
 
 - [ ] CA-01 a CA-06 e CA-15 a CA-17 cobertos por testes
 - [ ] J-02 no Playwright, com `axe` sem violação

@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Permite que um workflow de release reaproveite estes mesmos passos como pré-condição da imagem.
+  workflow_call:
+
+# Permissão mínima no nível do workflow: sem este bloco, PR de branch do mesmo repositório
+# herdaria o padrão do repositório, que pode incluir escrita. O CI só lê o código.
+permissions:
+  contents: read
+
+# Um PR novo cancela a execução anterior do mesmo PR, economizando minutos do runner. Na main
+# não se cancela: cada merge precisa de uma execução concluída, e cancelar deixaria o commit sem CI.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-and-test:
+    name: Build e testes
+    runs-on: ubuntu-latest
+    # Teto de segurança: a execução normal leva bem menos; um travamento não consome o runner por horas.
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nenhum passo faz git push; sem isso o token ficaria gravado em .git/config.
+          persist-credentials: false
+
+      # Node vem do .nvmrc, a mesma versão usada na máquina do desenvolvedor. O cache do npm
+      # reaproveita downloads entre execuções, guiado pelo package-lock.json.
+      - name: Configurar Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # O `npm ci` instala exatamente o package-lock.json. O script `prepare` do Husky roda aqui
+      # e só configura o core.hooksPath, sem efeito no runner.
+      - name: Instalar dependências
+        run: npm ci
+
+      # A ordem vai do passo mais barato ao mais caro: uma falha de formatação ou de lint aparece
+      # em segundos, antes dos testes e do build.
+      - name: Verificar formatação
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Lint de estilos
+        run: npm run lint:styles
+
+      - name: Verificar tipos
+        run: npm run typecheck
+
+      # Confere se o schema.ts gerado ainda bate com o snapshot do contrato da API. Se a API mudou
+      # e o front não foi regenerado, o build passaria; este passo falha antes.
+      - name: Conferir tipos do contrato
+        run: npm run api:types:check
+
+      - name: Testes com cobertura
+        run: npm run test:coverage
+
+      - name: Build de produção
+        run: npm run build
+
+      # Falha se o bundle inicial, comprimido, passar do orçamento de 250 KB (RNF-01).
+      - name: Orçamento do bundle
+        run: npm run build:budget
