@@ -1,0 +1,9 @@
+docs/
+.claude/
+CLAUDE.md
+README.md
+openapi/
+package-lock.json
+src/app/api/schema.ts
+dist/
+coverage/
